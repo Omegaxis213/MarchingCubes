@@ -16,6 +16,7 @@ import {
 import { Mat4, Vec4, Vec3 } from "../lib/TSM.js";
 import { RenderPass } from "../lib/webglutils/RenderPass.js";
 import { SphereGeometry } from "./SphereGeometry.js";
+import { MarchingCube } from "./MarchingCube.js";
 
 export interface MengerAnimationTest {
   reset(): void;
@@ -33,11 +34,12 @@ export class MengerAnimation extends CanvasAnimation {
   private sphere: SphereGeometry = new SphereGeometry();
   private sphereRenderPass: RenderPass;
 
+  private cube: MarchingCube;
+  private cubeRenderPass: RenderPass;
+
   /* Global Rendering Info */
   private lightPosition: Vec4 = new Vec4();
   private backgroundColor: Vec4 = new Vec4();
-
-  // TODO: data structures for the floor
 
 
   constructor(canvas: HTMLCanvasElement) {
@@ -47,8 +49,30 @@ export class MengerAnimation extends CanvasAnimation {
     this.ctx = Debugger.makeDebugContext(this.ctx);
     let gl = this.ctx;
 
+    let grid = [];
+    var size = 20;
+
+    for (var i = 0; i < size; i++) // x coord
+    {
+      let arrTwo = [];
+      for (var j = 0; j < size; j++) // y coord
+      {
+        let arrOne = [];
+        for (var k = 0; k < size; k++) // z coord
+        {
+//          arrOne.push(10 - j);
+          arrOne.push((i - size / 2) * (i - size / 2) + (j - size / 2) * (j - size / 2) + (k - size / 2) * (k - size / 2) - 25);
+        }
+        arrTwo.push(arrOne);
+      }
+      grid.push(arrTwo);
+    }
+
+    this.cube = new MarchingCube(grid, size);
+
     this.floorRenderPass = new RenderPass(this.extVAO, gl, floorVSText, floorFSText);
     this.sphereRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
+    this.cubeRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
     /* Setup Animation */
     this.reset();
   }
@@ -64,6 +88,7 @@ export class MengerAnimation extends CanvasAnimation {
 
     this.initFloor();
     this.initSphere();
+    this.initCube();
 
     this.gui.reset();
 
@@ -168,6 +193,60 @@ export class MengerAnimation extends CanvasAnimation {
   }
 
   /**
+ * Sets up the cube and cube drawing
+ */
+  public initCube(): void {
+    this.cubeRenderPass.setIndexBufferData(this.cube.indicesFlat());
+    this.cubeRenderPass.addAttribute("aVertPos",
+      4,
+      this.ctx.FLOAT,
+      false,
+      4 * Float32Array.BYTES_PER_ELEMENT,
+      0,
+      undefined,
+      this.cube.positionsFlat()
+    );
+
+    this.cubeRenderPass.addAttribute("aNorm",
+      4,
+      this.ctx.FLOAT,
+      false,
+      4 * Float32Array.BYTES_PER_ELEMENT,
+      0,
+      undefined,
+      this.cube.normsFlat()
+    );
+
+    this.cubeRenderPass.addUniform("uLightPos",
+      (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+        gl.uniform4fv(loc, this.lightPosition.xyzw);
+    });
+    this.cubeRenderPass.addUniform("uWorld",
+      (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+        gl.uniformMatrix4fv(loc, false, new Float32Array(Mat4.identity.all()));
+    });
+    this.cubeRenderPass.addUniform("uProj",
+      (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+        gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.projMatrix().all()));
+    });
+    this.cubeRenderPass.addUniform("uView",
+      (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+        gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.viewMatrix().all()));
+    });
+    this.cubeRenderPass.addUniform("uProjInv",
+      (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+        gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.projMatrix().inverse().all()));
+    });
+    this.cubeRenderPass.addUniform("uViewInv",
+      (gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
+        gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.viewMatrix().inverse().all()));
+    });
+
+    this.cubeRenderPass.setDrawData(this.ctx.TRIANGLES, this.cube.indicesFlat().length, this.ctx.UNSIGNED_INT, 0);
+    this.cubeRenderPass.setup();
+  }
+
+  /**
    * Draws a single frame
    */
   public draw(): void {
@@ -185,6 +264,7 @@ export class MengerAnimation extends CanvasAnimation {
 
     this.floorRenderPass.draw();
     this.sphereRenderPass.draw();
+    this.cubeRenderPass.draw();
   }
 
 
