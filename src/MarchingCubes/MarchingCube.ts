@@ -21,72 +21,63 @@ export class MarchingCube{
 		const vertices = [];
 		const normals = [];
 
+
 		var numVertex = 0;
-		for (var i = 0; i < size - 1; i++) // x coord
+		for (var i = 1; i < size - 2; i++) // x coord
 		{
-			for (var j = 0; j < size - 1; j++) // y coord
+			for (var j = 1; j < size - 2; j++) // y coord
 			{
-				for (var k = 0; k < size - 1; k++) // z coord
+				for (var k = 1; k < size - 2; k++) // z coord
 				{
+					var gridPos = [
+						[i + 0, j + 0, k + 0],
+						[i + 0, j + 1, k + 0],
+						[i + 1, j + 1, k + 0],
+						[i + 1, j + 0 ,k + 0],
+						[i + 0, j + 0, k + 1],
+						[i + 0, j + 1, k + 1],
+						[i + 1, j + 1, k + 1],
+						[i + 1, j + 0 ,k + 1],
+						[i + 0, j + 0, k + 0],
+						[i + 0, j + 1, k + 0],
+						[i + 1, j + 1, k + 0],
+						[i + 1, j + 0, k + 0]
+					];
+
+					var gridPosNext = [
+						[i + 0, j + 1, k + 0],
+						[i + 1, j + 1, k + 0],
+						[i + 1, j + 0, k + 0],
+						[i + 0, j + 0, k + 0],
+						[i + 0, j + 1, k + 1],
+						[i + 1, j + 1, k + 1],
+						[i + 1, j + 0, k + 1],
+						[i + 0, j + 0, k + 1],
+						[i + 0, j + 0, k + 1],
+						[i + 0, j + 1, k + 1],
+						[i + 1, j + 1, k + 1],
+						[i + 1, j + 0, k + 1]
+					];
 					var cubeIndex = 0;
-					if (grid[i][j][k] < 0) cubeIndex |= 1;
-					if (grid[i][j + 1][k] < 0) cubeIndex |= 2;
-					if (grid[i + 1][j + 1][k] < 0) cubeIndex |= 4;
-					if (grid[i + 1][j][k] < 0) cubeIndex |= 8;
-					if (grid[i][j][k + 1] < 0) cubeIndex |= 16;
-					if (grid[i][j + 1][k + 1] < 0) cubeIndex |= 32;
-					if (grid[i + 1][j + 1][k + 1] < 0) cubeIndex |= 64;
-					if (grid[i + 1][j][k + 1] < 0) cubeIndex |= 128;
+					var num = 1;
+					for (var a = 0; a < 8; a++)
+					{
+						if(this.accessGrid(grid, gridPos[a]) < 0) cubeIndex |= num;
+						num *= 2;
+					}
 					if (this.edgeTable[cubeIndex] == 0) continue;
 
 					var vertexList = new Array(12);
+					var normList = new Array(12);
 
-					if(this.edgeTable[cubeIndex] & 1)
-						vertexList[0] = this.VertexInterp(new Vec3([i, j, k]), new Vec3([i, j + 1, k]), grid[i][j][k], grid[i][j + 1][k]);
-					if(this.edgeTable[cubeIndex] & 2)
-						vertexList[1] = this.VertexInterp(new Vec3([i, j + 1, k]), new Vec3([i + 1, j + 1, k]), grid[i][j + 1][k], grid[i + 1][j + 1][k]);
-					if(this.edgeTable[cubeIndex] & 4)
-						vertexList[2] = this.VertexInterp(new Vec3([i + 1, j + 1, k]), new Vec3([i + 1, j, k]), grid[i + 1][j + 1][k], grid[i + 1][j][k]);
-					if(this.edgeTable[cubeIndex] & 8)
-						vertexList[3] = this.VertexInterp(new Vec3([i + 1, j, k]), new Vec3([i, j, k]), grid[i + 1][j][k], grid[i][j][k]);
-					if(this.edgeTable[cubeIndex] & 16)
-						vertexList[4] = this.VertexInterp(new Vec3([i, j, k + 1]), new Vec3([i, j + 1, k + 1]), grid[i][j][k + 1], grid[i][j + 1][k + 1]);
-					if(this.edgeTable[cubeIndex] & 32)
-						vertexList[5] = this.VertexInterp(new Vec3([i, j + 1, k + 1]), new Vec3([i + 1, j + 1, k + 1]), grid[i][j + 1][k + 1], grid[i + 1][j + 1][k + 1]);
-					if(this.edgeTable[cubeIndex] & 64)
-						vertexList[6] = this.VertexInterp(new Vec3([i + 1, j + 1, k + 1]), new Vec3([i + 1, j, k + 1]), grid[i + 1][j + 1][k + 1], grid[i + 1][j][k + 1]);
-					if(this.edgeTable[cubeIndex] & 128)
-						vertexList[7] = this.VertexInterp(new Vec3([i + 1, j, k + 1]), new Vec3([i, j, k + 1]), grid[i + 1][j][k + 1], grid[i][j][k + 1]);
-					if(this.edgeTable[cubeIndex] & 256)
-						vertexList[8] = this.VertexInterp(new Vec3([i, j, k]), new Vec3([i, j, k + 1]), grid[i][j][k], grid[i][j][k + 1]);
-					if(this.edgeTable[cubeIndex] & 512)
-						vertexList[9] = this.VertexInterp(new Vec3([i, j + 1, k]), new Vec3([i, j + 1, k + 1]), grid[i][j + 1][k], grid[i][j + 1][k + 1]);
-					if(this.edgeTable[cubeIndex] & 1024)
-						vertexList[10] = this.VertexInterp(new Vec3([i + 1, j + 1, k]), new Vec3([i + 1, j + 1, k + 1]), grid[i + 1][j + 1][k], grid[i + 1][j + 1][k + 1]);
-					if(this.edgeTable[cubeIndex] & 2048)
-						vertexList[11] = this.VertexInterp(new Vec3([i + 1, j, k]), new Vec3([i + 1, j, k + 1]), grid[i + 1][j][k], grid[i + 1][j][k + 1]);
-
-					//use flat shading for now
-					for (var a = 0; this.triTable[cubeIndex][a] != -1; a += 3)
+					num = 1;
+					for (var a = 0; a < 12; a++)
 					{
-						indices.push(numVertex);
-						indices.push(numVertex + 1);
-						indices.push(numVertex + 2);
-						numVertex += 3;
-						vertices.push(vertexList[this.triTable[cubeIndex][a]].x, vertexList[this.triTable[cubeIndex][a]].y, vertexList[this.triTable[cubeIndex][a]].z, 1);
-						vertices.push(vertexList[this.triTable[cubeIndex][a + 1]].x, vertexList[this.triTable[cubeIndex][a + 1]].y, vertexList[this.triTable[cubeIndex][a + 1]].z, 1);
-						vertices.push(vertexList[this.triTable[cubeIndex][a + 2]].x, vertexList[this.triTable[cubeIndex][a + 2]].y, vertexList[this.triTable[cubeIndex][a + 2]].z, 1);
-						var vecOne = new Vec3();
-						var vecTwo = new Vec3();
-						vertexList[this.triTable[cubeIndex][a + 1]].subtract(vertexList[this.triTable[cubeIndex][a]], vecOne);
-						vertexList[this.triTable[cubeIndex][a + 2]].subtract(vertexList[this.triTable[cubeIndex][a]], vecTwo);
-						var norm = Vec3.cross(vecOne, vecTwo).normalize();
-						normals.push(norm.x, norm.y, norm.z, 0);
-						normals.push(norm.x, norm.y, norm.z, 0);
-						normals.push(norm.x, norm.y, norm.z, 0);
+						vertexList[a] = this.vertexInterp(grid, gridPos[a], gridPosNext[a]);
+						normList[a] = this.normInterp(grid, gridPos[a], gridPosNext[a]);
+						num *= 2;
 					}
 
-					/* Use this when I figure out how to calculate the normals per vertex
 					var localRemap = new Array(12);
 					for (var a = 0; a < 12; a++)
 						localRemap[a] = -1;
@@ -95,6 +86,7 @@ export class MarchingCube{
 						if(localRemap[this.triTable[cubeIndex][a]] == -1)
 						{
 							vertices.push(vertexList[this.triTable[cubeIndex][a]].x, vertexList[this.triTable[cubeIndex][a]].y, vertexList[this.triTable[cubeIndex][a]].z, 1);
+							normals.push(normList[this.triTable[cubeIndex][a]].x, normList[this.triTable[cubeIndex][a]].y, normList[this.triTable[cubeIndex][a]].z, 0);
 							localRemap[this.triTable[cubeIndex][a]] = numVertex;
 							numVertex++;
 						}
@@ -105,23 +97,52 @@ export class MarchingCube{
 						indices.push(localRemap[this.triTable[cubeIndex][a + 1]]);
 						indices.push(localRemap[this.triTable[cubeIndex][a + 2]]);
 					}
-					*/
+					
 				}
 			}
 		}
 
-		console.log(normals);
 		// build geometry
 		this.positionArr = new Float32Array(vertices);
 		this.normalArr = new Float32Array(normals);
 		this.indexArr = new Uint32Array(indices);
 	}
 
-	public VertexInterp(posOne: Vec3, posTwo: Vec3, valOne: number, valTwo: number): Vec3
+	public vertexInterp(grid: number[][][], gridPos: number[], gridPosNext: number[]): Vec3
 	{
+		var posOne = new Vec3([gridPos[0], gridPos[1], gridPos[2]]);
+		var posTwo = new Vec3([gridPosNext[0], gridPosNext[1], gridPosNext[2]]);
+		var valOne = this.accessGrid(grid, gridPos);
+		var valTwo = this.accessGrid(grid, gridPosNext);
+
 		var tempOne = new Vec3();
 		posTwo.subtract(posOne).scale(-valOne / (valTwo - valOne), tempOne);
 		return posOne.add(tempOne);
+	}
+
+	public normInterp(grid: number[][][], gridPos: number[], gridPosNext: number[]): Vec3
+	{
+		var normOne = this.estimateNorm(grid, gridPos);
+		var normTwo = this.estimateNorm(grid, gridPosNext);
+		var valOne = this.accessGrid(grid, gridPos);
+		var valTwo = this.accessGrid(grid, gridPosNext);
+
+		var tempOne = new Vec3();
+		normTwo.subtract(normOne).scale(-valOne / (valTwo - valOne), tempOne);
+		return normOne.add(tempOne).normalize();
+	}
+
+	public estimateNorm(grid: number[][][], curPos: number[]): Vec3
+	{
+		var gradientX = grid[curPos[0] + 1][curPos[1]][curPos[2]] - grid[curPos[0] - 1][curPos[1]][curPos[2]];
+		var gradientY = grid[curPos[0]][curPos[1] + 1][curPos[2]] - grid[curPos[0]][curPos[1] - 1][curPos[2]];
+		var gradientZ = grid[curPos[0]][curPos[1]][curPos[2] + 1] - grid[curPos[0]][curPos[1]][curPos[2] - 1];
+		return new Vec3([gradientX, gradientY, gradientZ]);
+	}
+
+	public accessGrid(grid: number[][][], pos: number[])
+	{
+		return grid[pos[0]][pos[1]][pos[2]];
 	}
 
 	public indicesFlat(): Uint32Array

@@ -27,6 +27,8 @@ export interface MengerAnimationTest {
 export class MengerAnimation extends CanvasAnimation {
   private gui: GUI;
 
+  private time: number;
+
   //floor
   private floor: Floor = new Floor();
   private floorRenderPass: RenderPass;
@@ -45,12 +47,14 @@ export class MengerAnimation extends CanvasAnimation {
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
     this.gui = new GUI(canvas, this);
+    this.time = 0;
 
     this.ctx = Debugger.makeDebugContext(this.ctx);
     let gl = this.ctx;
 
+    
     let grid = [];
-    var size = 20;
+    var size = 30;
 
     for (var i = 0; i < size; i++) // x coord
     {
@@ -61,7 +65,14 @@ export class MengerAnimation extends CanvasAnimation {
         for (var k = 0; k < size; k++) // z coord
         {
 //          arrOne.push(10 - j);
-          arrOne.push((i - size / 2) * (i - size / 2) + (j - size / 2) * (j - size / 2) + (k - size / 2) * (k - size / 2) - 25);
+//          arrOne.push((i - size / 2) * (i - size / 2) + (j - size / 2) * (j - size / 2) + (k - size / 2) * (k - size / 2) - 25);
+          
+          var posX = i - size / 2;
+          var posY = j - size / 2;
+          var posZ = k - size / 2;
+          arrOne.push((posX * posX + posY * posY + posZ * posZ + 25 - 12) * (posX * posX + posY * posY + posZ * posZ + 25 - 12) - 4 * 25 * (posX * posX + posY * posY));
+          
+//          arrOne.push(Math.sin(i) + Math.sin(j) + Math.sin(k));
         }
         arrTwo.push(arrOne);
       }
@@ -69,6 +80,8 @@ export class MengerAnimation extends CanvasAnimation {
     }
 
     this.cube = new MarchingCube(grid, size);
+    
+//    this.cube = new MarchingCube([], 0);
 
     this.floorRenderPass = new RenderPass(this.extVAO, gl, floorVSText, floorFSText);
     this.sphereRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
@@ -261,6 +274,32 @@ export class MengerAnimation extends CanvasAnimation {
     gl.enable(gl.DEPTH_TEST);
     gl.frontFace(gl.CCW);
     //gl.cullFace(gl.BACK);
+
+    /* inefficient? way of updating a chunk
+    this.cubeRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
+    let grid = [];
+    var size = 20;
+
+    for (var i = 0; i < size; i++) // x coord
+    {
+      let arrTwo = [];
+      for (var j = 0; j < size; j++) // y coord
+      {
+        let arrOne = [];
+        for (var k = 0; k < size; k++) // z coord
+        {
+          arrOne.push(Math.sin(i + this.time) + Math.sin(j + this.time) + Math.sin(k + this.time));
+        }
+        arrTwo.push(arrOne);
+      }
+      grid.push(arrTwo);
+    }
+
+    this.cube = new MarchingCube(grid, size);
+
+    this.time += .01;
+    this.initCube();
+    */
 
     this.floorRenderPass.draw();
     this.sphereRenderPass.draw();

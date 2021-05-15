@@ -127,7 +127,12 @@ export const sphereFSText = `
     void main() {
         vec4 wsPos = uViewInv * uProjInv * vec4(vClipPos.xyz/vClipPos.w, 1.0);
         wsPos /= wsPos.w;
-    
-        gl_FragColor = vec4((normal.x + 1.0)/2.0, (normal.y + 1.0)/2.0, (normal.z + 1.0)/2.0,1.0);
+        
+        vec3 color = vec3((normal.x + 1.0) / 2.0, (normal.y + 1.0) / 2.0, (normal.z + 1.0) / 2.0);
+        /* Compute light fall off */
+        vec4 lightDirection = uLightPos - wsPos;
+        float dot_nl = dot(normalize(lightDirection), normal);
+        dot_nl = clamp(dot_nl, 0.0, 1.0);
+        gl_FragColor = vec4(clamp(dot_nl * color, 0.0, 1.0), 1.0);
     }
 `;

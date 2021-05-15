@@ -20,9 +20,9 @@ interface IGUI {
  */
 export class GUI implements IGUI {
   private static readonly rotationSpeed: number = 0.05;
-  private static readonly zoomSpeed: number = 0.1;
+  private static readonly zoomSpeed: number = 0.2;
   private static readonly rollSpeed: number = 0.1;
-  private static readonly panSpeed: number = 0.1;
+  private static readonly panSpeed: number = 0.2;
 
   private camera: Camera;
   private dragging: boolean;
