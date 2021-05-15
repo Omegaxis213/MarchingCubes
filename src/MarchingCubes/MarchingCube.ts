@@ -87,7 +87,7 @@ export class MarchingCube{
 					{
 						if(localRemap[this.triTable[cubeIndex][a]] == -1)
 						{
-							vertices.push(vertexList[this.triTable[cubeIndex][a]].x, vertexList[this.triTable[cubeIndex][a]].y, vertexList[this.triTable[cubeIndex][a]].z, 1);
+							vertices.push(vertexList[this.triTable[cubeIndex][a]].x * width, vertexList[this.triTable[cubeIndex][a]].y * width, vertexList[this.triTable[cubeIndex][a]].z * width, 1);
 							normals.push(normList[this.triTable[cubeIndex][a]].x, normList[this.triTable[cubeIndex][a]].y, normList[this.triTable[cubeIndex][a]].z, 0);
 							localRemap[this.triTable[cubeIndex][a]] = numVertex;
 							numVertex++;
