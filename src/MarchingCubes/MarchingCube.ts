@@ -1,20 +1,16 @@
 import { Vec3 } from "../lib/TSM.js";
 
-//Taken and modified from the three.js library
-
 export class MarchingCube{
 
 	positionArr: Float32Array;
 	indexArr: Uint32Array;
 	normalArr: Float32Array;
 
-	size: number;
 	width: number;
 	grid: number[][][];
 
-	constructor(grid: number[][][], size: number, width: number) {
+	constructor(grid: number[][][], width: number) {
 
-		this.size = size;
 		this.width = width;
 		this.grid = grid;
 		// buffers
@@ -37,10 +33,10 @@ export class MarchingCube{
 		for (var i = 1; i < grid.length - 2; i++) // x coord
 		{
 			prevYIsReady = false;
-			for (var j = 1; j < grid.length - 2; j++) // y coord
+			for (var j = 1; j < grid[0].length - 2; j++) // y coord
 			{
 				prevZIsReady = false;
-				for (var k = 1; k < grid.length - 2; k++) // z coord
+				for (var k = 1; k < grid[0][0].length - 2; k++) // z coord
 				{
 					var gridPos = [
 						[i + 0, j + 0, k + 0],
