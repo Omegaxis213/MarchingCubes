@@ -25,10 +25,21 @@ export class MarchingCube{
 
 
 		var numVertex = 0;
+		var prevXIsReady = false;
+		var prevXLocalRemap = new Array((grid.length - 2) * (grid.length - 2));
+
+		var prevYIsReady = false;
+		var prevYLocalRemap = new Array(grid.length - 2);
+
+		var prevZIsReady = false;
+		var prevZLocalRemap = [];
+
 		for (var i = 1; i < grid.length - 2; i++) // x coord
 		{
+			prevYIsReady = false;
 			for (var j = 1; j < grid.length - 2; j++) // y coord
 			{
+				prevZIsReady = false;
 				for (var k = 1; k < grid.length - 2; k++) // z coord
 				{
 					var gridPos = [
@@ -75,8 +86,11 @@ export class MarchingCube{
 					num = 1;
 					for (var a = 0; a < 12; a++)
 					{
-						vertexList[a] = this.vertexInterp(grid, gridPos[a], gridPosNext[a]);
-						normList[a] = this.normInterp(grid, gridPos[a], gridPosNext[a]);
+						if (this.edgeTable[cubeIndex] & num)
+						{
+							vertexList[a] = this.vertexInterp(grid, gridPos[a], gridPosNext[a]);
+							normList[a] = this.normInterp(grid, gridPos[a], gridPosNext[a]);
+						}
 						num *= 2;
 					}
 
@@ -85,7 +99,39 @@ export class MarchingCube{
 						localRemap[a] = -1;
 					for (var a = 0; this.triTable[cubeIndex][a] != -1; a++)
 					{
-						if(localRemap[this.triTable[cubeIndex][a]] == -1)
+						if (prevZIsReady)
+						{
+							if (this.triTable[cubeIndex][a] >= 0 && this.triTable[cubeIndex][a] <= 3)
+							{
+								localRemap[this.triTable[cubeIndex][a]] = prevZLocalRemap[this.triTable[cubeIndex][a] + 4];
+							}
+						}
+
+						if (prevYIsReady)
+						{
+							if (this.triTable[cubeIndex][a] == 3)
+								localRemap[this.triTable[cubeIndex][a]] = prevYLocalRemap[k - 1][1];
+							else if (this.triTable[cubeIndex][a] == 7)
+								localRemap[this.triTable[cubeIndex][a]] = prevYLocalRemap[k - 1][5];
+							else if (this.triTable[cubeIndex][a] == 8)
+								localRemap[this.triTable[cubeIndex][a]] = prevYLocalRemap[k - 1][9];
+							else if (this.triTable[cubeIndex][a] == 11)
+								localRemap[this.triTable[cubeIndex][a]] = prevYLocalRemap[k - 1][10];
+						}
+
+						if (prevXIsReady)
+						{
+							if (this.triTable[cubeIndex][a] == 0)
+								localRemap[this.triTable[cubeIndex][a]] = prevXLocalRemap[(j - 1) * (grid.length - 2) + k - 1][2];
+							else if (this.triTable[cubeIndex][a] == 4)
+								localRemap[this.triTable[cubeIndex][a]] = prevXLocalRemap[(j - 1) * (grid.length - 2) + k - 1][6];
+							else if (this.triTable[cubeIndex][a] == 8)
+								localRemap[this.triTable[cubeIndex][a]] = prevXLocalRemap[(j - 1) * (grid.length - 2) + k - 1][11];
+							else if (this.triTable[cubeIndex][a] == 9)
+								localRemap[this.triTable[cubeIndex][a]] = prevXLocalRemap[(j - 1) * (grid.length - 2) + k - 1][10];
+						}
+
+						if (localRemap[this.triTable[cubeIndex][a]] == -1)
 						{
 							vertices.push(vertexList[this.triTable[cubeIndex][a]].x * width, vertexList[this.triTable[cubeIndex][a]].y * width, vertexList[this.triTable[cubeIndex][a]].z * width, 1);
 							normals.push(normList[this.triTable[cubeIndex][a]].x, normList[this.triTable[cubeIndex][a]].y, normList[this.triTable[cubeIndex][a]].z, 0);
@@ -93,17 +139,23 @@ export class MarchingCube{
 							numVertex++;
 						}
 					}
+					prevZLocalRemap = localRemap;
+					prevYLocalRemap[k - 1] = localRemap;
+					prevXLocalRemap[(j - 1) * (grid.length - 2) + k - 1] = localRemap;
+
 					for (var a = 0; this.triTable[cubeIndex][a] != -1; a += 3)
 					{
-						indices.push(localRemap[this.triTable[cubeIndex][a]]);
-						indices.push(localRemap[this.triTable[cubeIndex][a + 1]]);
-						indices.push(localRemap[this.triTable[cubeIndex][a + 2]]);
+						indices.push(localRemap[this.triTable[cubeIndex][a]], localRemap[this.triTable[cubeIndex][a + 1]], localRemap[this.triTable[cubeIndex][a + 2]]);
 					}
-					
-				}
-			}
-		}
 
+					prevZIsReady = true;
+				}
+				prevYIsReady = true;
+			}
+			prevXIsReady = true;
+		}
+		console.log(vertices.length);
+		console.log(indices.length);
 		// build geometry
 		this.positionArr = new Float32Array(vertices);
 		this.normalArr = new Float32Array(normals);

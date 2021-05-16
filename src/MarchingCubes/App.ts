@@ -71,7 +71,7 @@ export class MengerAnimation extends CanvasAnimation {
           var posY = j - size / 2;
           var posZ = k - size / 2;
           arrOne.push((posX * posX + posY * posY + posZ * posZ + 25 - 12) * (posX * posX + posY * posY + posZ * posZ + 25 - 12) - 4 * 25 * (posX * posX + posY * posY));
-//          arrOne.push(Math.sin(i) + Math.sin(j) + Math.sin(k));
+//          arrOne.push(Math.sin(i * 6) + Math.sin(j * 6) + Math.sin(k * 6));
         }
         arrTwo.push(arrOne);
       }
@@ -269,32 +269,34 @@ export class MengerAnimation extends CanvasAnimation {
     const bg: Vec4 = this.backgroundColor;
     gl.clearColor(bg.r, bg.g, bg.b, bg.a);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    //gl.enable(gl.CULL_FACE);
+    gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     gl.frontFace(gl.CCW);
-    //gl.cullFace(gl.BACK);
+    gl.cullFace(gl.BACK);
 
-    /* inefficient? way of updating a chunk
+    //inefficient? way of updating a chunk
+    /*
     this.cubeRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
     let grid = [];
-    var size = 20;
+    var size = 2;
+    var width = .05;
 
-    for (var i = 0; i < size; i++) // x coord
+    for (var i = 0; i < size; i += width) // x coord
     {
       let arrTwo = [];
-      for (var j = 0; j < size; j++) // y coord
+      for (var j = 0; j < size; j += width) // y coord
       {
         let arrOne = [];
-        for (var k = 0; k < size; k++) // z coord
+        for (var k = 0; k < size; k += width) // z coord
         {
-          arrOne.push(Math.sin(i + this.time) + Math.sin(j + this.time) + Math.sin(k + this.time));
+          arrOne.push(Math.sin(i * 6 + this.time) + Math.sin(j * 6 + this.time) + Math.sin(k * 6 + this.time));
         }
         arrTwo.push(arrOne);
       }
       grid.push(arrTwo);
     }
 
-    this.cube = new MarchingCube(grid, size);
+    this.cube = new MarchingCube(grid, size, width);
 
     this.time += .01;
     this.initCube();
