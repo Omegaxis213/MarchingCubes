@@ -54,35 +54,42 @@ export class MengerAnimation extends CanvasAnimation {
 		let gl = this.ctx;
 
 		
-		let grid = [];
-		var sizeX = 5;
-		var sizeY = 3;
-		var sizeZ = 5;
-		var width = .01;
+		var sizeX = 200;
+		var sizeY = 50;
+		var sizeZ = 200;
+		var offsetY = 15;
+		var width = .5;
 
+		let grid = new Array(Math.ceil(sizeX / width));
+		var posI = 0;
 		for (var i = 0; i < sizeX; i += width) // x coord
 		{
-			let arrTwo = [];
-			for (var j = 0; j < sizeY; j += width) // y coord
+			let arrTwo = new Array(Math.ceil((sizeY - offsetY - 15) / width));
+			var posJ = 0;
+			for (var j = 0; j < sizeY - offsetY - 15; j += width) // y coord
 			{
-				let arrOne = [];
+				let arrOne = new Array(Math.ceil(sizeZ / width));
+				var posK = 0;
 				for (var k = 0; k < sizeZ; k += width) // z coord
 				{
-		//          arrOne.push(10 - j);
 		//          arrOne.push((i - size / 2) * (i - size / 2) + (j - size / 2) * (j - size / 2) + (k - size / 2) * (k - size / 2) - 25 + Math.random() * 2);
-					var posX = i - sizeX / 2;
-					var posY = j - sizeY / 2;
-					var posZ = k - sizeZ / 2;
-					/*
-					arrOne.push((posX * posX + posY * posY + posZ * posZ + 25 - 12) * (posX * posX + posY * posY + posZ * posZ + 25 - 12) - 4 * 25 * (posX * posX + posY * posY));
-					*/
-					arrOne.push(posY + PerlinNoise.octavePerlin(posX, 0, posZ, 9, .5) * sizeY / 2);
-		//          arrOne.push(Math.sin(i * 6) + Math.sin(j * 6) + Math.sin(k * 6));
+					var posX = i - 15;
+					var posY = j - 15;
+					var posZ = k - 15;
+//					arrOne[posK] = (posX * posX + posY * posY + posZ * posZ + 25 - 12) * (posX * posX + posY * posY + posZ * posZ + 25 - 12) - 4 * 25 * (posX * posX + posY * posY);
+//					arrOne.push(j - sizeY + noise * sizeY);
+//					arrOne.push(j - PerlinNoise.octavePerlin(i / 40, j / 10, k / 40, 6, .5) * sizeY + offsetY);
+					arrOne[posK] = j - PerlinNoise.octavePerlin(i / 40, j / 10, k / 40, 6, .5) * sizeY + offsetY;
+					posK++;
 				}
-				arrTwo.push(arrOne);
+				arrTwo[posJ] = arrOne;
+				posJ++;
 			}
-			grid.push(arrTwo);
+			grid[posI] = arrTwo;
+			posI++;
 		}
+
+		console.log("Finished generating values");
 
 		this.cube = new MarchingCube(grid, width);
 		
@@ -275,10 +282,10 @@ export class MengerAnimation extends CanvasAnimation {
 		const bg: Vec4 = this.backgroundColor;
 		gl.clearColor(bg.r, bg.g, bg.b, bg.a);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		gl.enable(gl.CULL_FACE);
+//		gl.enable(gl.CULL_FACE);
 		gl.enable(gl.DEPTH_TEST);
 		gl.frontFace(gl.CCW);
-		gl.cullFace(gl.BACK);
+//		gl.cullFace(gl.BACK);
 
 		//inefficient? way of updating a chunk
 		/*
@@ -292,12 +299,12 @@ export class MengerAnimation extends CanvasAnimation {
 			let arrTwo = [];
 			for (var j = 0; j < size; j += width) // y coord
 			{
-			let arrOne = [];
-			for (var k = 0; k < size; k += width) // z coord
-			{
-				arrOne.push(Math.sin(i * 6 + this.time) + Math.sin(j * 6 + this.time) + Math.sin(k * 6 + this.time));
-			}
-			arrTwo.push(arrOne);
+				let arrOne = [];
+				for (var k = 0; k < size; k += width) // z coord
+				{
+					arrOne.push(Math.sin(i * 6 + this.time) + Math.sin(j * 6 + this.time) + Math.sin(k * 6 + this.time));
+				}
+				arrTwo.push(arrOne);
 			}
 			grid.push(arrTwo);
 		}

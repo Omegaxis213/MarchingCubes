@@ -9,6 +9,8 @@ export class MarchingCube{
 	width: number;
 	grid: number[][][];
 
+	num: number = 0;
+
 	constructor(grid: number[][][], width: number) {
 
 		this.width = width;
@@ -29,6 +31,9 @@ export class MarchingCube{
 
 		var prevZIsReady = false;
 		var prevZLocalRemap = [];
+
+		var total = 0;
+		var success = 0;
 
 		for (var i = 1; i < grid.length - 2; i++) // x coord
 		{
@@ -74,7 +79,9 @@ export class MarchingCube{
 						if(this.accessGrid(grid, gridPos[a]) < 0) cubeIndex |= num;
 						num *= 2;
 					}
+					total++;
 					if (this.edgeTable[cubeIndex] == 0) continue;
+					success++;
 
 					var vertexList = new Array(12);
 					var normList = new Array(12);
@@ -152,6 +159,9 @@ export class MarchingCube{
 		}
 		console.log(vertices.length);
 		console.log(indices.length);
+		console.log(success / total);
+		console.log(total);
+		console.log(this.num);
 		// build geometry
 		this.positionArr = new Float32Array(vertices);
 		this.normalArr = new Float32Array(normals);
@@ -192,6 +202,7 @@ export class MarchingCube{
 
 	public accessGrid(grid: number[][][], pos: number[])
 	{
+		this.num++;
 		return grid[pos[0]][pos[1]][pos[2]];
 	}
 

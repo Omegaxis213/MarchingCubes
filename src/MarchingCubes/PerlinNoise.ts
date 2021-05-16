@@ -77,7 +77,9 @@ export class PerlinNoise {
 	        case 0xD: return -y + z;
 	        case 0xE: return  y - x;
 	        case 0xF: return -y - z;
-	        default: return 0;
+	        default:
+	        console.log("ERROR");
+	        return 0;
 	    }
 	}
 
