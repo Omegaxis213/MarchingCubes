@@ -11,7 +11,7 @@ export class MarchingCube{
 
 	num: number = 0;
 
-	constructor(grid: number[][][], width: number) {
+	constructor(grid: number[][][], width: number, offsetX: number, offsetZ: number) {
 
 		this.width = width;
 		this.grid = grid;
@@ -136,7 +136,7 @@ export class MarchingCube{
 
 						if (localRemap[this.triTable[cubeIndex][a]] == -1)
 						{
-							vertices.push(vertexList[this.triTable[cubeIndex][a]].x * width, vertexList[this.triTable[cubeIndex][a]].y * width, vertexList[this.triTable[cubeIndex][a]].z * width, 1);
+							vertices.push(vertexList[this.triTable[cubeIndex][a]].x * width + offsetX, vertexList[this.triTable[cubeIndex][a]].y * width, vertexList[this.triTable[cubeIndex][a]].z * width + offsetZ, 1);
 							normals.push(normList[this.triTable[cubeIndex][a]].x, normList[this.triTable[cubeIndex][a]].y, normList[this.triTable[cubeIndex][a]].z, 0);
 							localRemap[this.triTable[cubeIndex][a]] = numVertex;
 							numVertex++;

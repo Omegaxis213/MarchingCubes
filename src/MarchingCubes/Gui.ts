@@ -61,7 +61,7 @@ export class GUI implements IGUI {
    * Resets the state of the GUI
    */
   public reset(): void {
-    this.fps = false;
+    this.fps = true;
     this.dragging = false;
     /* Create camera setup */
     this.camera = new Camera(
@@ -89,6 +89,11 @@ export class GUI implements IGUI {
     zFar: number
   ) {
     this.camera = new Camera(pos, target, upDir, fov, aspect, zNear, zFar);
+  }
+
+  public getCameraPos(): Vec3
+  {
+    return this.camera.pos();
   }
 
   /**

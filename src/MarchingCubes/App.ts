@@ -37,13 +37,22 @@ export class MengerAnimation extends CanvasAnimation {
 	private sphere: SphereGeometry = new SphereGeometry();
 	private sphereRenderPass: RenderPass;
 
-	private cube: MarchingCube;
-	private cubeRenderPass: RenderPass;
+	private cube: MarchingCube[];
+	private cubeRenderPass: RenderPass[];
 
 	/* Global Rendering Info */
 	private lightPosition: Vec4 = new Vec4();
 	private backgroundColor: Vec4 = new Vec4();
 
+	private curChunkX: number;
+	private curChunkZ: number;
+
+	private sizeX: number;
+	private sizeY: number;
+	private sizeZ: number;
+	private offsetY: number;
+	private width: number;
+	private numChunk: number;
 
 	constructor(canvas: HTMLCanvasElement) {
 		super(canvas);
@@ -53,51 +62,63 @@ export class MengerAnimation extends CanvasAnimation {
 		this.ctx = Debugger.makeDebugContext(this.ctx);
 		let gl = this.ctx;
 
+		this.sizeX = 20;
+		this.sizeY = 50;
+		this.sizeZ = 20;
+		this.offsetY = 15;
+		this.width = 1;
+		this.numChunk = 3;
+		var cameraChunkX = Math.floor(this.gui.getCameraPos().x / this.sizeX);
+		var cameraChunkZ = Math.floor(this.gui.getCameraPos().z / this.sizeZ);
 		
-		var sizeX = 200;
-		var sizeY = 50;
-		var sizeZ = 200;
-		var offsetY = 15;
-		var width = .5;
-
-		let grid = new Array(Math.ceil(sizeX / width));
-		var posI = 0;
-		for (var i = 0; i < sizeX; i += width) // x coord
+		this.cube = new Array((this.numChunk * 2 + 1) * (this.numChunk * 2 + 1));
+		this.cubeRenderPass = new Array((this.numChunk * 2 + 1) * (this.numChunk * 2 + 1));
+		this.curChunkX = cameraChunkX;
+		this.curChunkZ = cameraChunkZ;
+		var time = performance.now();
+		for (var a = -this.numChunk; a <= this.numChunk; a++)
 		{
-			let arrTwo = new Array(Math.ceil((sizeY - offsetY - 15) / width));
-			var posJ = 0;
-			for (var j = 0; j < sizeY - offsetY - 15; j += width) // y coord
+			for(var b = -this.numChunk; b <= this.numChunk; b++)
 			{
-				let arrOne = new Array(Math.ceil(sizeZ / width));
-				var posK = 0;
-				for (var k = 0; k < sizeZ; k += width) // z coord
+				this.cubeRenderPass[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk] = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
+
+				let grid = new Array(Math.ceil(this.sizeX / this.width) + 3);
+				var posI = 0;
+				for (var i = 0; i < this.sizeX + this.width * 3; i += this.width) // x coord
 				{
-		//          arrOne.push((i - size / 2) * (i - size / 2) + (j - size / 2) * (j - size / 2) + (k - size / 2) * (k - size / 2) - 25 + Math.random() * 2);
-					var posX = i - 15;
-					var posY = j - 15;
-					var posZ = k - 15;
-//					arrOne[posK] = (posX * posX + posY * posY + posZ * posZ + 25 - 12) * (posX * posX + posY * posY + posZ * posZ + 25 - 12) - 4 * 25 * (posX * posX + posY * posY);
-//					arrOne.push(j - sizeY + noise * sizeY);
-//					arrOne.push(j - PerlinNoise.octavePerlin(i / 40, j / 10, k / 40, 6, .5) * sizeY + offsetY);
-					arrOne[posK] = j - PerlinNoise.octavePerlin(i / 40, j / 10, k / 40, 6, .5) * sizeY + offsetY;
-					posK++;
+					let arrTwo = new Array(Math.ceil((this.sizeY - this.offsetY - 15) / this.width));
+					var posJ = 0;
+					for (var j = 0; j < this.sizeY - this.offsetY - 15; j += this.width) // y coord
+					{
+						let arrOne = new Array(Math.ceil(this.sizeZ / this.width) + 3);
+						var posK = 0;
+						for (var k = 0; k < this.sizeZ + this.width * 3; k += this.width) // z coord
+						{
+							var posX = i + (cameraChunkX + a) * this.sizeX;
+							var posY = j;
+							var posZ = k + (cameraChunkZ + b) * this.sizeZ;
+							arrOne[posK] = j - PerlinNoise.octavePerlin(posX / 40, posY / 10, posZ / 40, 6, .5) * this.sizeY + this.offsetY;
+							posK++;
+						}
+						arrTwo[posJ] = arrOne;
+						posJ++;
+					}
+					grid[posI] = arrTwo;
+					posI++;
 				}
-				arrTwo[posJ] = arrOne;
-				posJ++;
+
+				this.cube[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk] = new MarchingCube(grid, this.width, (cameraChunkX + a) * this.sizeX, (cameraChunkZ + b) * this.sizeZ);
+
+				this.initCube((a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk);
 			}
-			grid[posI] = arrTwo;
-			posI++;
 		}
-
-		console.log("Finished generating values");
-
-		this.cube = new MarchingCube(grid, width);
+		var newTime = performance.now();
+		console.log("Finished generating terrain: " + (newTime - time) + " milliseconds");
 		
-	//    this.cube = new MarchingCube([], 0);
 
 		this.floorRenderPass = new RenderPass(this.extVAO, gl, floorVSText, floorFSText);
 		this.sphereRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
-		this.cubeRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
+//		this.cubeRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
 		/* Setup Animation */
 		this.reset();
 	}
@@ -113,7 +134,6 @@ export class MengerAnimation extends CanvasAnimation {
 
 		this.initFloor();
 		this.initSphere();
-		this.initCube();
 
 		this.gui.reset();
 
@@ -220,55 +240,55 @@ export class MengerAnimation extends CanvasAnimation {
 	/**
  * Sets up the cube and cube drawing
  */
-	public initCube(): void {
-		this.cubeRenderPass.setIndexBufferData(this.cube.indicesFlat());
-		this.cubeRenderPass.addAttribute("aVertPos",
+	public initCube(index: number): void {
+		this.cubeRenderPass[index].setIndexBufferData(this.cube[index].indicesFlat());
+		this.cubeRenderPass[index].addAttribute("aVertPos",
 			4,
 			this.ctx.FLOAT,
 			false,
 			4 * Float32Array.BYTES_PER_ELEMENT,
 			0,
 			undefined,
-			this.cube.positionsFlat()
+			this.cube[index].positionsFlat()
 		);
 
-		this.cubeRenderPass.addAttribute("aNorm",
+		this.cubeRenderPass[index].addAttribute("aNorm",
 			4,
 			this.ctx.FLOAT,
 			false,
 			4 * Float32Array.BYTES_PER_ELEMENT,
 			0,
 			undefined,
-			this.cube.normsFlat()
+			this.cube[index].normsFlat()
 		);
 
-		this.cubeRenderPass.addUniform("uLightPos",
+		this.cubeRenderPass[index].addUniform("uLightPos",
 			(gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
 			gl.uniform4fv(loc, this.lightPosition.xyzw);
 		});
-		this.cubeRenderPass.addUniform("uWorld",
+		this.cubeRenderPass[index].addUniform("uWorld",
 			(gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
 			gl.uniformMatrix4fv(loc, false, new Float32Array(Mat4.identity.all()));
 		});
-		this.cubeRenderPass.addUniform("uProj",
+		this.cubeRenderPass[index].addUniform("uProj",
 			(gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
 			gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.projMatrix().all()));
 		});
-		this.cubeRenderPass.addUniform("uView",
+		this.cubeRenderPass[index].addUniform("uView",
 			(gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
 			gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.viewMatrix().all()));
 		});
-		this.cubeRenderPass.addUniform("uProjInv",
+		this.cubeRenderPass[index].addUniform("uProjInv",
 			(gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
 			gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.projMatrix().inverse().all()));
 		});
-		this.cubeRenderPass.addUniform("uViewInv",
+		this.cubeRenderPass[index].addUniform("uViewInv",
 			(gl: WebGLRenderingContext, loc: WebGLUniformLocation) => {
 			gl.uniformMatrix4fv(loc, false, new Float32Array(this.gui.viewMatrix().inverse().all()));
 		});
 
-		this.cubeRenderPass.setDrawData(this.ctx.TRIANGLES, this.cube.indicesFlat().length, this.ctx.UNSIGNED_INT, 0);
-		this.cubeRenderPass.setup();
+		this.cubeRenderPass[index].setDrawData(this.ctx.TRIANGLES, this.cube[index].indicesFlat().length, this.ctx.UNSIGNED_INT, 0);
+		this.cubeRenderPass[index].setup();
 	}
 
 	/**
@@ -287,37 +307,86 @@ export class MengerAnimation extends CanvasAnimation {
 		gl.frontFace(gl.CCW);
 //		gl.cullFace(gl.BACK);
 
-		//inefficient? way of updating a chunk
-		/*
-		this.cubeRenderPass = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
-		let grid = [];
-		var size = 2;
-		var width = .05;
+		//inefficient way of updating chunks
 
-		for (var i = 0; i < size; i += width) // x coord
+		
+		var cameraChunkX = Math.floor(this.gui.getCameraPos().x / this.sizeX);
+		var cameraChunkZ = Math.floor(this.gui.getCameraPos().z / this.sizeZ);
+		
+		if (cameraChunkX != this.curChunkX || cameraChunkZ != this.curChunkZ)
 		{
-			let arrTwo = [];
-			for (var j = 0; j < size; j += width) // y coord
+			//keep old chunks
+			var tempCube = new Array((this.numChunk * 2 + 1) * (this.numChunk * 2 + 1));
+			var tempCubeRenderPass = new Array((this.numChunk * 2 + 1) * (this.numChunk * 2 + 1));
+			var hasOldChunk = new Array((this.numChunk * 2 + 1) * (this.numChunk * 2 + 1));
+			for (var a = -this.numChunk; a <= this.numChunk; a++)
 			{
-				let arrOne = [];
-				for (var k = 0; k < size; k += width) // z coord
+				for(var b = -this.numChunk; b <= this.numChunk; b++)
 				{
-					arrOne.push(Math.sin(i * 6 + this.time) + Math.sin(j * 6 + this.time) + Math.sin(k * 6 + this.time));
+					var newPosX = a + this.curChunkX - cameraChunkX;
+					var newPosZ = b + this.curChunkZ - cameraChunkZ;
+					if(newPosX >= -this.numChunk && newPosX <= this.numChunk && newPosZ >= -this.numChunk && newPosZ <= this.numChunk)
+					{
+						tempCube[(newPosX + this.numChunk) * (this.numChunk * 2 + 1) + newPosZ + this.numChunk] = this.cube[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk];
+						tempCubeRenderPass[(newPosX + this.numChunk) * (this.numChunk * 2 + 1) + newPosZ + this.numChunk] = this.cubeRenderPass[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk];
+						hasOldChunk[(newPosX + this.numChunk) * (this.numChunk * 2 + 1) + newPosZ + this.numChunk] = true;
+					}
+					else
+						hasOldChunk[(newPosX + this.numChunk) * (this.numChunk * 2 + 1) + newPosZ + this.numChunk] = false;
 				}
-				arrTwo.push(arrOne);
 			}
-			grid.push(arrTwo);
+
+			//generate new chunks
+			this.cube = tempCube;
+			this.cubeRenderPass = tempCubeRenderPass;
+			this.curChunkX = cameraChunkX;
+			this.curChunkZ = cameraChunkZ;
+			var time = performance.now();
+			for (var a = -this.numChunk; a <= this.numChunk; a++)
+			{
+				for(var b = -this.numChunk; b <= this.numChunk; b++)
+				{
+					if(hasOldChunk[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk]) continue;
+					this.cubeRenderPass[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk] = new RenderPass(this.extVAO, gl, sphereVSText, sphereFSText);
+
+					let grid = new Array(Math.ceil(this.sizeX / this.width) + 3);
+					var posI = 0;
+					for (var i = 0; i < this.sizeX + this.width * 3; i += this.width) // x coord
+					{
+						let arrTwo = new Array(Math.ceil((this.sizeY - this.offsetY - 15) / this.width));
+						var posJ = 0;
+						for (var j = 0; j < this.sizeY - this.offsetY - 15; j += this.width) // y coord
+						{
+							let arrOne = new Array(Math.ceil(this.sizeZ / this.width) + 3);
+							var posK = 0;
+							for (var k = 0; k < this.sizeZ + this.width * 3; k += this.width) // z coord
+							{
+								var posX = i + (cameraChunkX + a) * this.sizeX;
+								var posY = j;
+								var posZ = k + (cameraChunkZ + b) * this.sizeZ;
+								arrOne[posK] = j - PerlinNoise.octavePerlin(posX / 40, posY / 10, posZ / 40, 6, .5) * this.sizeY + this.offsetY;
+								posK++;
+							}
+							arrTwo[posJ] = arrOne;
+							posJ++;
+						}
+						grid[posI] = arrTwo;
+						posI++;
+					}
+
+					this.cube[(a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk] = new MarchingCube(grid, this.width, (cameraChunkX + a) * this.sizeX, (cameraChunkZ + b) * this.sizeZ);
+
+					this.initCube((a + this.numChunk) * (this.numChunk * 2 + 1) + b + this.numChunk);
+				}
+			}
+			var newTime = performance.now();
+			console.log("Finished generating terrain: " + (newTime - time) + " milliseconds");
 		}
-
-		this.cube = new MarchingCube(grid, size, width);
-
-		this.time += .01;
-		this.initCube();
-		*/
 
 		this.floorRenderPass.draw();
 //		this.sphereRenderPass.draw();
-		this.cubeRenderPass.draw();
+		for (var i = 0; i < this.cubeRenderPass.length; i++)
+			this.cubeRenderPass[i].draw();
 	}
 
 
